@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import subprocess
 import struct
 import re
@@ -158,7 +158,7 @@ def link_path_to_entry(path):
     return False
 
 def open_file(path):
-    subprocess.Popen(["xdg-open", path])
+    subprocess.Popen(["okular", path])
 
 def move_document(oldpath, newpath):
     mv = subprocess.Popen(['mv', '--verbose', '--no-clobber', oldpath, newpath])
@@ -278,7 +278,6 @@ if len(sys.argv) > 2 and sys.argv[1] == 'import':
 
 with open(bibfile) as bibtex_file:
     # parser.customization = convert_to_unicode
-    documents = filter_documents(find_files(document_dir))
     menu = []
     is_file = []
     bib_filenames = [] # filenames that are reachable via bib entries
@@ -290,12 +289,14 @@ with open(bibfile) as bibtex_file:
         e['_filepaths'] = []
         for i in e['_filenames']:
             link_doc_name_to_entry(i, e)
-    for e in documents:
-        if not link_path_to_entry(e):
-            # if the file e could not be linked to an entry
-            # then add it to the menu
-            menu.append(e)
-            is_file.append(True)
+
+    # documents = filter_documents(find_files(document_dir))
+    # for e in documents:
+    #     if not link_path_to_entry(e):
+    #         # if the file e could not be linked to an entry
+    #         # then add it to the menu
+    #         menu.append(e)
+    #         is_file.append(True)
     for idx,e in enumerate(bib_database.values()):
         menu[idx] = format_bib_entry(e)
 
@@ -335,21 +336,26 @@ with open(bibfile) as bibtex_file:
         entry = list(bib_database.values())[idx]
         if len(entry['_filepaths']) > 0:
             open_file(document_dir + '/' + entry['_filepaths'][0])
+        elif 'file' in entry and len(entry['file']) > 0:
+            _, path, _ = entry['file'].split(':')
+            open_file(path)
         else:
-            message = 'Pick a document corresponding to the entry:\n\n'
-            message += '  ' + re.sub('\n', '\n  ', menu[idx]) + '\n\n'
-            message += 'The selected file will be renamed to:\n\n'
-            message += '  ' + entry['_filenames'][0]
-            message += '\n'
-            newfileidx,_ = call_rofi(documents, [ '-p', 'Link:', '-no-custom', '-mesg', message ])
-            if newfileidx == None:
-                sys.exit(0)
-            filepath = document_dir + '/' + documents[newfileidx]
-            dirname, basename = os.path.split(filepath)
-            docname,extension = os.path.splitext(basename)
-            new_path = dirname + '/' + entry['_filenames'][0] + extension
-            move_document(filepath, new_path)
-            open_file(new_path)
+            raise ValueError
+        #else:
+        #    message = 'Pick a document corresponding to the entry:\n\n'
+        #    message += '  ' + re.sub('\n', '\n  ', menu[idx]) + '\n\n'
+        #    message += 'The selected file will be renamed to:\n\n'
+        #    message += '  ' + entry['_filenames'][0]
+        #    message += '\n'
+        #    newfileidx,_ = call_rofi(documents, [ '-p', 'Link:', '-no-custom', '-mesg', message ])
+        #    if newfileidx == None:
+        #        sys.exit(0)
+        #    filepath = document_dir + '/' + documents[newfileidx]
+        #    dirname, basename = os.path.split(filepath)
+        #    docname,extension = os.path.splitext(basename)
+        #    new_path = dirname + '/' + entry['_filenames'][0] + extension
+        #    move_document(filepath, new_path)
+        #    open_file(new_path)
 
             # try to link a document
     #print(bib_database.entries)
